@@ -1,0 +1,389 @@
+{
+  "runs": 6,
+  "sim_minutes_per_run": 10.0,
+  "densities": [
+    15,
+    40,
+    70,
+    100
+  ],
+  "conditions": [
+    "clear day",
+    "night",
+    "heavy rain",
+    "fog / dust",
+    "sensor fault"
+  ],
+  "density_correction_factor": 1.522,
+  "simulated_hours_total": 4.0,
+  "traffic": {
+    "mean_speed_kmh": {
+      "15": 39.7,
+      "40": 38.5,
+      "70": 25.6,
+      "100": 13.8
+    },
+    "flow_veh_h_lane": {
+      "15": 621.0,
+      "40": 1583.9,
+      "70": 1845.2,
+      "100": 1420.6
+    },
+    "cut_ins": {
+      "15": 6.0,
+      "40": 6.0,
+      "70": 4.0,
+      "100": 1.8
+    },
+    "hard_brakes": {
+      "15": 6.3,
+      "40": 6.3,
+      "70": 5.7,
+      "100": 14.8
+    }
+  },
+  "per_condition": {
+    "clear day": {
+      "recall_visible": 0.9658654797722027,
+      "recall_visible_ci": [
+        0.9647241003592872,
+        0.9669263989766724
+      ],
+      "recall_visible_up_to_70": 0.9658839993813236,
+      "recall_visible_up_to_70_ci": [
+        0.9644977786336253,
+        0.967216063426155
+      ],
+      "recall_all": 0.7364170024806792,
+      "mota_up_to_70": 0.7733843258971059,
+      "mota_up_to_70_ci": [
+        0.7359587095982993,
+        0.8072288664851106
+      ],
+      "dist_mape_40": 2.3926192038571177,
+      "dist_mape_40_ci": [
+        2.387926387061481,
+        2.3975412254986446
+      ],
+      "state_macro_f1": 0.7102427910585514,
+      "conflict_events": 143,
+      "conflict_recall": 0.972027972027972,
+      "conflict_recall_ci": [
+        0.9585414344109996,
+        0.9869230769230769
+      ],
+      "severe_events": 98,
+      "severe_missed": 0,
+      "false_alerts_per_hour": 0.0,
+      "false_alerts_ci": [
+        0.0,
+        0.0
+      ],
+      "hours": 4.0,
+      "nuisance_alerts_per_hour": 4.0,
+      "median_warning_lead_s": 0.30000000000000004
+    },
+    "night": {
+      "recall_visible": 0.8140841235542481,
+      "recall_visible_ci": [
+        0.8067675708439895,
+        0.8203946669461882
+      ],
+      "recall_visible_up_to_70": 0.8110808388367668,
+      "recall_visible_up_to_70_ci": [
+        0.8020728294326791,
+        0.8187874752245718
+      ],
+      "recall_all": 0.6200713979198956,
+      "mota_up_to_70": 0.6385189277203994,
+      "mota_up_to_70_ci": [
+        0.609335407199777,
+        0.6646107176609728
+      ],
+      "dist_mape_40": 3.5833573211602907,
+      "dist_mape_40_ci": [
+        3.5762748199905277,
+        3.59165470448736
+      ],
+      "state_macro_f1": 0.5501780338837865,
+      "conflict_events": 143,
+      "conflict_recall": 0.986013986013986,
+      "conflict_recall_ci": [
+        0.9713164251207728,
+        1.0
+      ],
+      "severe_events": 98,
+      "severe_missed": 0,
+      "false_alerts_per_hour": 0.0,
+      "false_alerts_ci": [
+        0.0,
+        0.0
+      ],
+      "hours": 4.0,
+      "nuisance_alerts_per_hour": 5.0,
+      "median_warning_lead_s": 0.30000000000000004
+    },
+    "heavy rain": {
+      "recall_visible": 0.8811909666166394,
+      "recall_visible_ci": [
+        0.8769504165820462,
+        0.8852203684130661
+      ],
+      "recall_visible_up_to_70": 0.8802692263428331,
+      "recall_visible_up_to_70_ci": [
+        0.8747488411834884,
+        0.885206494037342
+      ],
+      "recall_all": 0.6717081873132281,
+      "mota_up_to_70": 0.6920243258890898,
+      "mota_up_to_70_ci": [
+        0.6600940580535731,
+        0.7205818610144346
+      ],
+      "dist_mape_40": 3.192743909110536,
+      "dist_mape_40_ci": [
+        3.1855545399236203,
+        3.2007631124926315
+      ],
+      "state_macro_f1": 0.6831046133406633,
+      "conflict_events": 143,
+      "conflict_recall": 0.965034965034965,
+      "conflict_recall_ci": [
+        0.9413702239789196,
+        0.9861244658119658
+      ],
+      "severe_events": 98,
+      "severe_missed": 0,
+      "false_alerts_per_hour": 0.0,
+      "false_alerts_ci": [
+        0.0,
+        0.0
+      ],
+      "hours": 4.0,
+      "nuisance_alerts_per_hour": 4.5,
+      "median_warning_lead_s": 0.30000000000000004
+    },
+    "fog / dust": {
+      "recall_visible": 0.7223035146624426,
+      "recall_visible_ci": [
+        0.7114815820815157,
+        0.7320945775255837
+      ],
+      "recall_visible_up_to_70": 0.7155218007665699,
+      "recall_visible_up_to_70_ci": [
+        0.7023989437316899,
+        0.7269492508307586
+      ],
+      "recall_all": 0.5488646125893463,
+      "mota_up_to_70": 0.546773589150773,
+      "mota_up_to_70_ci": [
+        0.5246326404371532,
+        0.5677055844301511
+      ],
+      "dist_mape_40": 3.991787483730615,
+      "dist_mape_40_ci": [
+        3.982653506227053,
+        4.00105754982287
+      ],
+      "state_macro_f1": 0.3203902377815422,
+      "conflict_events": 143,
+      "conflict_recall": 0.958041958041958,
+      "conflict_recall_ci": [
+        0.9299033816425121,
+        0.9861249999999999
+      ],
+      "severe_events": 98,
+      "severe_missed": 0,
+      "false_alerts_per_hour": 0.0,
+      "false_alerts_ci": [
+        0.0,
+        0.0
+      ],
+      "hours": 4.0,
+      "nuisance_alerts_per_hour": 4.0,
+      "median_warning_lead_s": 0.30000000000000004
+    },
+    "sensor fault": {
+      "recall_visible": 0.7366643902577343,
+      "recall_visible_ci": [
+        0.7071203336844191,
+        0.7712543620313481
+      ],
+      "recall_visible_up_to_70": 0.7477778441191342,
+      "recall_visible_up_to_70_ci": [
+        0.7100302688552291,
+        0.7941520255237831
+      ],
+      "recall_all": 0.5654494137152324,
+      "mota_up_to_70": 0.5833310563326978,
+      "mota_up_to_70_ci": [
+        0.5327380876226947,
+        0.6393124419608328
+      ],
+      "dist_mape_40": 4.256861517296098,
+      "dist_mape_40_ci": [
+        4.248028930656113,
+        4.265640193170089
+      ],
+      "state_macro_f1": 0.420219348056313,
+      "conflict_events": 143,
+      "conflict_recall": 0.965034965034965,
+      "conflict_recall_ci": [
+        0.9429036835748791,
+        0.9869230769230769
+      ],
+      "severe_events": 98,
+      "severe_missed": 0,
+      "false_alerts_per_hour": 0.0,
+      "false_alerts_ci": [
+        0.0,
+        0.0
+      ],
+      "hours": 4.0,
+      "nuisance_alerts_per_hour": 4.25,
+      "median_warning_lead_s": 0.35000000000000003
+    }
+  },
+  "robustness_ratio": {
+    "clear day": {
+      "detection": 1.0,
+      "conflict": 1.0
+    },
+    "night": {
+      "detection": 0.843,
+      "conflict": 1.014
+    },
+    "heavy rain": {
+      "detection": 0.912,
+      "conflict": 0.993
+    },
+    "fog / dust": {
+      "detection": 0.748,
+      "conflict": 0.986
+    },
+    "sensor fault": {
+      "detection": 0.763,
+      "conflict": 0.993
+    }
+  },
+  "state_confusion_clear": {
+    "congested": {
+      "congested": 90,
+      "free flow": 0,
+      "near capacity": 21,
+      "stable": 0,
+      "stop-and-go": 39
+    },
+    "free flow": {
+      "congested": 0,
+      "free flow": 50,
+      "near capacity": 0,
+      "stable": 0,
+      "stop-and-go": 0
+    },
+    "near capacity": {
+      "congested": 2,
+      "free flow": 0,
+      "near capacity": 24,
+      "stable": 32,
+      "stop-and-go": 0
+    },
+    "stable": {
+      "congested": 0,
+      "free flow": 13,
+      "near capacity": 0,
+      "stable": 75,
+      "stop-and-go": 0
+    },
+    "stop-and-go": {
+      "congested": 4,
+      "free flow": 0,
+      "near capacity": 0,
+      "stable": 0,
+      "stop-and-go": 50
+    }
+  },
+  "latency": [
+    {
+      "density": 15,
+      "mode": "normal",
+      "objects_in_view": 5.1,
+      "p50": 35.61,
+      "p99": 42.61,
+      "deadline_miss_pct": 0.0,
+      "dropped_pct": 0.0,
+      "mean_proc": 23.77
+    },
+    {
+      "density": 15,
+      "mode": "thermal throttling (+30%)",
+      "objects_in_view": 5.1,
+      "p50": 40.56,
+      "p99": 49.97,
+      "deadline_miss_pct": 0.0,
+      "dropped_pct": 0.0,
+      "mean_proc": 28.63
+    },
+    {
+      "density": 40,
+      "mode": "normal",
+      "objects_in_view": 8.9,
+      "p50": 37.14,
+      "p99": 44.39,
+      "deadline_miss_pct": 0.0,
+      "dropped_pct": 0.0,
+      "mean_proc": 25.29
+    },
+    {
+      "density": 40,
+      "mode": "thermal throttling (+30%)",
+      "objects_in_view": 8.9,
+      "p50": 42.44,
+      "p99": 53.06,
+      "deadline_miss_pct": 0.0,
+      "dropped_pct": 0.0,
+      "mean_proc": 30.15
+    },
+    {
+      "density": 70,
+      "mode": "normal",
+      "objects_in_view": 16.4,
+      "p50": 40.27,
+      "p99": 48.11,
+      "deadline_miss_pct": 0.0,
+      "dropped_pct": 0.0,
+      "mean_proc": 28.34
+    },
+    {
+      "density": 70,
+      "mode": "thermal throttling (+30%)",
+      "objects_in_view": 16.4,
+      "p50": 53.24,
+      "p99": 77.47,
+      "deadline_miss_pct": 0.0,
+      "dropped_pct": 0.73,
+      "mean_proc": 33.2
+    },
+    {
+      "density": 100,
+      "mode": "normal",
+      "objects_in_view": 24.6,
+      "p50": 44.67,
+      "p99": 57.97,
+      "deadline_miss_pct": 0.0,
+      "dropped_pct": 0.01,
+      "mean_proc": 31.61
+    },
+    {
+      "density": 100,
+      "mode": "thermal throttling (+30%)",
+      "objects_in_view": 24.6,
+      "p50": 64.52,
+      "p99": 85.11,
+      "deadline_miss_pct": 0.0,
+      "dropped_pct": 8.68,
+      "mean_proc": 36.47
+    }
+  ],
+  "runtime_s": 21696.6
+}

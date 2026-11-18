@@ -1,0 +1,1481 @@
+[
+ [
+  "p",
+  "Simulation and Testing Strategy for AI Algorithms in Traffic Analysis",
+  null
+ ],
+ [
+  "p",
+  "Validating the Saarthi Traffic Analytics Model in Simulated Indian Traffic Before Real-Time Deployment",
+  null
+ ],
+ [
+  "p",
+  "Automotive AI Innovation Internship (YuvaIntern)",
+  "Internship:"
+ ],
+ [
+  "p",
+  "Week 4: Simulation and Testing Strategy for AI Algorithms in Traffic Analysis",
+  "Task:"
+ ],
+ [
+  "p",
+  "Him Sharma",
+  "Prepared by:"
+ ],
+ [
+  "p",
+  "November 2026",
+  "Date:"
+ ],
+ [
+  "h",
+  1,
+  "1. Executive Summary"
+ ],
+ [
+  "p",
+  "This report sets out a simulation and testing strategy for an AI-based traffic analytics model before it is deployed in vehicles. The model under test is the Saarthi Traffic Analytics Model, which runs on the in-vehicle device designed in Week 3. It detects and tracks surrounding road users, estimates the local traffic state (from free flow to stop-and-go), predicts the paths of nearby vehicles, two-wheelers and pedestrians, and flags conflicts that could lead to a crash. Its outputs feed real-time driver warnings and, when aggregated across a fleet, congestion and accident-hotspot maps.",
+  null
+ ],
+ [
+  "p",
+  "The strategy uses an open-source co-simulation of SUMO, a microscopic traffic simulator, and CARLA, a sensor-realistic 3D driving simulator. Traffic is generated from theoretical data: a Greenshields speed–density model, the Intelligent Driver Model for car following, SUMO's sublane model for lane-free two-wheeler movement, and an assumed Indian vehicle mix. A catalogue of ten scenario families, from highway cut-ins to pedestrian and animal crossings, is tested under five conditions (clear day, night, rain, fog or dust, and sensor faults), giving about 3,500 simulation runs or roughly 90 hours of simulated driving. Testing moves through five levels, from model-in-the-loop on recorded datasets to software-in-the-loop, hardware-in-the-loop on the target device, closed-track tests and shadow mode on public roads.",
+  null
+ ],
+ [
+  "p",
+  "Performance is measured on three axes: accuracy (detection, tracking, traffic-state and trajectory metrics), latency (end-to-end and 99th-percentile timing on the target hardware) and robustness (performance retained under degradation). The data analysis plan uses ground-truth matching, confidence intervals, sample-size calculations, hypothesis tests and failure-boundary analysis. The report closes with expected outcomes, go/no-go criteria for real-time deployment, expected challenges, a 16-week timeline and conclusions.",
+  null
+ ],
+ [
+  "h",
+  1,
+  "2. Introduction"
+ ],
+ [
+  "h",
+  2,
+  "2.1 Background and Purpose"
+ ],
+ [
+  "p",
+  "AI models that analyse traffic cannot be validated by road testing alone. Dangerous situations, such as a truck stalled in a fast lane at night or a child running between parked cars, are too rare and too risky to stage on public roads, and the variety of Indian traffic means millions of kilometres would be needed to see enough of them. Simulation solves this by creating any situation on demand, repeating it exactly, varying one factor at a time and providing perfect ground truth. This strategy defines how simulation, combined with recorded data and limited physical testing, will show whether the model is accurate, fast enough and robust enough for real-time use in the Saarthi platform, building on the simulation ideas first outlined in the Week 2 feasibility study.",
+  null
+ ],
+ [
+  "h",
+  2,
+  "2.2 The AI Model Under Test"
+ ],
+ [
+  "t",
+  "Components of the Saarthi Traffic Analytics Model",
+  [
+   "Component",
+   "Inputs",
+   "Outputs",
+   "Main algorithms"
+  ],
+  [
+   [
+    "C1 Perception and tracking",
+    "Forward camera frames (+ radar if fitted)",
+    "Tracked road users with class, position and velocity",
+    "YOLO-family detector; Kalman filter tracker (from Week 3)"
+   ],
+   [
+    "C2 Traffic-state estimation",
+    "Tracks, own speed, lane and road geometry",
+    "Local density (PCU/km/lane), mean speed, two-wheeler share, traffic-state class (5 levels)",
+    "Feature extraction + gradient-boosted classifier and regressor"
+   ],
+   [
+    "C3 Prediction and conflict detection",
+    "Tracks, map context",
+    "3-second trajectories, cut-in probability, conflicts measured by TTC, PET and DRAC",
+    "Lightweight transformer trajectory predictor + surrogate safety measures"
+   ]
+  ]
+ ],
+ [
+  "p",
+  "C1 to C3 run on the vehicle at 30 frames per second. Their outputs go to the Week 3 risk engine in real time and are also summarised and uploaded, so that the cloud can build congestion and conflict maps for fleet operators and city planners.",
+  null
+ ],
+ [
+  "h",
+  2,
+  "2.3 Simulation Objectives"
+ ],
+ [
+  "b",
+  [
+   [
+    "O1 Accuracy:",
+    "measure how accurately C1–C3 detect, track, estimate and predict, against exact ground truth."
+   ],
+   [
+    "O2 Robustness:",
+    "quantify how performance degrades with traffic density, weather, lighting and sensor faults."
+   ],
+   [
+    "O3 Real-time performance:",
+    "confirm that the model meets the 100 ms latency budget on the target hardware."
+   ],
+   [
+    "O4 Safety:",
+    "show that critical conflicts are detected reliably, with fewer than one false alert per hour."
+   ],
+   [
+    "O5 Operating limits:",
+    "find the conditions where the model starts to fail, so they can be handled or improved."
+   ],
+   [
+    "O6 Deployment readiness:",
+    "decide, against agreed criteria, whether the model is ready for the 200-vehicle pilot."
+   ]
+  ]
+ ],
+ [
+  "h",
+  2,
+  "2.4 Scope"
+ ],
+ [
+  "p",
+  "The strategy covers the traffic analytics model only, not the full driver-assistance product. It covers urban arterials, intersections, highways and rural roads in Indian conditions, in daylight and at night, in clear weather, rain, fog and dust, and with common sensor faults. Testing of driver-monitoring functions, vehicle health analytics and the cloud platform is outside its scope.",
+  null
+ ],
+ [
+  "h",
+  1,
+  "3. Literature Review: Simulation Approaches and the Role of AI"
+ ],
+ [
+  "h",
+  2,
+  "3.1 Levels of Traffic Simulation"
+ ],
+ [
+  "t",
+  "Levels of traffic simulation",
+  [
+   "Level",
+   "What it models",
+   "Examples",
+   "Use in this strategy"
+  ],
+  [
+   [
+    "Macroscopic",
+    "Traffic as a fluid: flow, density and speed (e.g. the LWR model)",
+    "Cell transmission models",
+    "Theoretical basis for demand and traffic states"
+   ],
+   [
+    "Mesoscopic",
+    "Groups of vehicles with simplified interactions",
+    "Dynamic traffic assignment tools",
+    "Not needed at corridor scale"
+   ],
+   [
+    "Microscopic",
+    "Every vehicle with car-following and lane-changing rules",
+    "SUMO, PTV Vissim, Aimsun",
+    "Realistic traffic around the test vehicle"
+   ],
+   [
+    "Sensor-level (sub-microscopic)",
+    "3D scene, physics and sensor outputs (images, radar)",
+    "CARLA, commercial simulators",
+    "Synthetic camera and radar input for the AI model"
+   ]
+  ]
+ ],
+ [
+  "p",
+  "Macroscopic models date back to Greenshields' 1935 study of the relationship between speed and density and the Lighthill–Whitham–Richards (LWR) kinematic wave theory of the 1950s. Microscopic simulators represent each driver with a car-following model, such as the Intelligent Driver Model (IDM), and a lane-changing model. Commercial tools such as PTV Vissim are widely used in Indian mixed-traffic research, while SUMO, an open-source simulator developed at the German Aerospace Center (DLR), offers a sublane model that lets narrow vehicles share and move within lanes, which is essential for modelling two-wheelers. Sensor-level simulators such as CARLA render the 3D world so that perception models can be tested on synthetic camera and radar data.",
+  null
+ ],
+ [
+  "h",
+  2,
+  "3.2 Scenario-Based Testing"
+ ],
+ [
+  "p",
+  "The automotive industry has moved from distance-based testing to scenario-based testing. Germany's PEGASUS project developed methods for describing and selecting test scenarios, and the ASAM OpenSCENARIO and OpenDRIVE standards define how scenarios and road networks are described so that they can be shared between tools. ISO 34502 sets out a scenario-based safety evaluation framework for automated driving. Testing is organised as 'X-in-the-loop': model-in-the-loop (MIL), software-in-the-loop (SIL), hardware-in-the-loop (HIL) and vehicle-in-the-loop, each adding realism and cost. Surrogate safety measures such as time-to-collision (TTC) and post-encroachment time (PET), analysed from simulation trajectories as in the FHWA's Surrogate Safety Assessment Model, allow safety to be assessed without waiting for crashes.",
+  null
+ ],
+ [
+  "h",
+  2,
+  "3.3 The Role of AI in Traffic Analysis"
+ ],
+ [
+  "p",
+  "AI now performs most traffic-analysis tasks. Deep detectors count and classify road users from video; trackers turn detections into trajectories; graph neural networks such as DCRNN forecast traffic across road networks; and sequence models, from Social LSTM to transformer predictors, forecast how individual agents will move while accounting for their interactions. AI also helps testing itself: data-driven and adversarial methods search for scenarios that make a model fail, which is far more efficient than random sampling for finding rare failures.",
+  null
+ ],
+ [
+  "h",
+  2,
+  "3.4 Implications for This Strategy"
+ ],
+ [
+  "b",
+  [
+   "Combine a microscopic traffic simulator (for realistic traffic) with a sensor-level simulator (for realistic AI inputs).",
+   "Model Indian mixed traffic explicitly, including lane-free two-wheeler movement.",
+   "Use scenario-based testing with standard formats so that scenarios are reusable and traceable.",
+   "Progress through X-in-the-loop levels, and measure safety with surrogate safety measures.",
+   "Never rely on simulation alone: validate against recorded real-world data and limited physical tests."
+  ]
+ ],
+ [
+  "h",
+  1,
+  "4. Methodology"
+ ],
+ [
+  "h",
+  2,
+  "4.1 Overall Test Framework"
+ ],
+ [
+  "p",
+  "Figure 1 shows the framework. A scenario manager holds the scenario catalogue and samples parameters for each run. SUMO generates traffic using theoretical demand and behaviour data, while CARLA renders the scene, weather and lighting and produces sensor streams. The two exchange vehicle states every simulation step. The model under test receives the sensor streams, either as software in a container (SIL) or on the real edge device (HIL). Recorded real-world datasets are also replayed through the model. An evaluation engine compares the model's outputs with the simulator's exact ground truth, and every failure is stored in a failure library that feeds new scenarios and training data.",
+  null
+ ],
+ [
+  "img",
+  0,
+  "Simulation and testing framework"
+ ],
+ [
+  "h",
+  2,
+  "4.2 Simulation Tools and Justification"
+ ],
+ [
+  "t",
+  "Simulation and analysis tools",
+  [
+   "Tool",
+   "Role",
+   "Why chosen"
+  ],
+  [
+   [
+    "SUMO",
+    "Microscopic traffic simulation",
+    "Open source; IDM and sublane models for mixed traffic; imports OpenStreetMap; Python control (TraCI)"
+   ],
+   [
+    "CARLA",
+    "3D world, weather and sensor simulation",
+    "Open source; configurable camera and radar; weather and lighting control; built-in SUMO co-simulation"
+   ],
+   [
+    "ScenarioRunner + OpenSCENARIO",
+    "Scenario definition and execution",
+    "Standard, reusable scenario descriptions; scripted events such as cut-ins"
+   ],
+   [
+    "ROS 2",
+    "Link between simulator and model",
+    "Same interfaces as the real device software"
+   ],
+   [
+    "Recorded datasets (nuScenes, IDD, highD)",
+    "Real-world replay",
+    "Measure the simulation-to-reality gap; real traffic behaviour"
+   ],
+   [
+    "Python analysis stack (pandas, SciPy), MLflow",
+    "Metrics, statistics, experiment tracking",
+    "Reproducible, scriptable analysis"
+   ]
+  ]
+ ],
+ [
+  "h",
+  2,
+  "4.3 Step-by-Step Simulation Plan"
+ ],
+ [
+  "p",
+  "The plan follows ten steps, shown in Figure 2, with results feeding back into the scenario catalogue and traffic demand.",
+  null
+ ],
+ [
+  "img",
+  1,
+  "Step-by-step simulation plan"
+ ],
+ [
+  "p",
+  "fix objectives O1–O6, the metrics and the pass/fail thresholds before any test is run, so results cannot be interpreted selectively.",
+  "Step 1, Objectives and hypotheses:"
+ ],
+ [
+  "p",
+  "list the road types, traffic levels, weather, lighting, behaviours and sensor conditions the model must handle, and turn them into the scenario catalogue (Section 4.7).",
+  "Step 2, Operational design domain and scenarios:"
+ ],
+ [
+  "p",
+  "import real road layouts from OpenStreetMap into SUMO and build matching OpenDRIVE maps for CARLA, including an urban corridor modelled on Indore's AB Road, a four-lane highway section, a signalised intersection, a roundabout and a rural two-lane road.",
+  "Step 3, Road networks:"
+ ],
+ [
+  "p",
+  "generate flows for each traffic state from the fundamental diagram (Section 4.5), split them by the assumed vehicle mix, and set signal timings, origin–destination routes and pedestrian flows.",
+  "Step 4, Traffic demand from theoretical data:"
+ ],
+ [
+  "p",
+  "check that simulated flows, speeds and headways match the theoretical targets using the GEH statistic and the fundamental diagram, and adjust behaviour parameters until they do (Section 4.6).",
+  "Step 5, Calibration and validation:"
+ ],
+ [
+  "p",
+  "configure CARLA sensors to match the Week 3 hardware and set the weather, lighting and fault conditions for each run (Section 4.8).",
+  "Step 6, Sensors and environment:"
+ ],
+ [
+  "p",
+  "connect the model through ROS 2, first as software (SIL), then on the target device (HIL) (Section 4.9).",
+  "Step 7, Model integration:"
+ ],
+ [
+  "p",
+  "run about 3,500 automated simulation runs with logged random seeds, plus HIL timing runs.",
+  "Step 8, Test campaign:"
+ ],
+ [
+  "p",
+  "match outputs with ground truth, compute metrics with confidence intervals and analyse failures (Sections 5 and 6).",
+  "Step 9, Analysis:"
+ ],
+ [
+  "p",
+  "compare results with the go/no-go criteria, report, and feed failures back into steps 2 and 4 and into model training.",
+  "Step 10, Report, decide and iterate:"
+ ],
+ [
+  "h",
+  2,
+  "4.4 Test Levels: From Model-in-the-Loop to the Road"
+ ],
+ [
+  "p",
+  "No single test level is enough. Figure 3 shows the five levels used: each step up adds realism and cost, so the number of tests falls while confidence in real-world behaviour rises.",
+  null
+ ],
+ [
+  "img",
+  2,
+  "Test levels from model-in-the-loop to the road"
+ ],
+ [
+  "t",
+  "Test levels",
+  [
+   "Level",
+   "What is tested",
+   "Main purpose"
+  ],
+  [
+   [
+    "Model-in-the-loop (MIL)",
+    "The model on recorded and synthetic datasets, frame by frame",
+    "Fast accuracy checks; regression tests for each model version"
+   ],
+   [
+    "Software-in-the-loop (SIL)",
+    "The full software in closed-loop simulation",
+    "Scenario coverage, robustness and safety metrics at scale"
+   ],
+   [
+    "Hardware-in-the-loop (HIL)",
+    "The software on the real edge device, fed with simulated video",
+    "True latency, frame rate, thermal behaviour"
+   ],
+   [
+    "Closed track",
+    "The device in a vehicle with soft targets",
+    "Confirm simulation results with real sensors and physics"
+   ],
+   [
+    "Shadow mode",
+    "The device in pilot vehicles, logging silently",
+    "Real-world false-alert rate and rare-event discovery"
+   ]
+  ]
+ ],
+ [
+  "h",
+  2,
+  "4.5 Modelling Traffic with Theoretical Data"
+ ],
+ [
+  "p",
+  "Because Indian field data for every scenario is not yet available, traffic is generated from theoretical models with clearly stated assumptions, which will later be replaced by survey data collected during the pilot. The Greenshields model links mean speed v to density k through the free-flow speed v_f and the jam density k_j, and flow q follows as their product:",
+  null
+ ],
+ [
+  "p",
+  "v = v_f · (1 − k / k_j),     q = k · v = v_f · k · (1 − k / k_j)     (1)",
+  null
+ ],
+ [
+  "p",
+  "For an urban arterial with v_f = 60 km/h and k_j = 130 PCU/km/lane, capacity is reached at half the jam density, giving about 1,950 passenger car units (PCU) per hour per lane. Figure 4 shows the resulting curves and the five traffic states used in testing; the dots mark the densities chosen for the scenarios (12, 35, 60, 85 and 115 PCU/km/lane).",
+  null
+ ],
+ [
+  "img",
+  3,
+  "Theoretical speed–density and flow–density relationships"
+ ],
+ [
+  "p",
+  "Individual vehicles follow the Intelligent Driver Model, in which acceleration a depends on the vehicle's speed v, desired speed v₀, the gap s to the vehicle ahead and the speed difference Δv:",
+  null
+ ],
+ [
+  "p",
+  "a = a_max · [ 1 − (v / v₀)^δ − (s* / s)² ],     s* = s₀ + v·T + v·Δv / (2·√(a_max·b))     (2)",
+  null
+ ],
+ [
+  "p",
+  "Here s₀ is the minimum gap, T the desired time headway, b the comfortable deceleration and δ an exponent (usually 4). SUMO's sublane model divides each lane into narrow strips so that two-wheelers and auto-rickshaws can filter between cars and move sideways, which standard lane-based models cannot represent. Each vehicle class receives its own parameters, shown in the table below as assumed values.",
+  null
+ ],
+ [
+  "t",
+  "Assumed vehicle classes and behaviour parameters (theoretical, to be replaced by survey data)",
+  [
+   "Class",
+   "Urban share",
+   "Highway share",
+   "Length (m)",
+   "Max speed (km/h)",
+   "Accel (m/s²)",
+   "Headway T (s)",
+   "Lateral behaviour"
+  ],
+  [
+   [
+    "Two-wheeler",
+    "45%",
+    "15%",
+    "1.9",
+    "60",
+    "2.5",
+    "0.8",
+    "High: filters between lanes"
+   ],
+   [
+    "Car",
+    "25%",
+    "45%",
+    "4.2",
+    "80",
+    "2.0",
+    "1.0",
+    "Moderate"
+   ],
+   [
+    "Auto-rickshaw",
+    "15%",
+    "0%",
+    "2.8",
+    "50",
+    "1.5",
+    "1.0",
+    "High"
+   ],
+   [
+    "Bus",
+    "5%",
+    "10%",
+    "11.0",
+    "60",
+    "1.0",
+    "1.2",
+    "Low; frequent stops"
+   ],
+   [
+    "Truck / LCV",
+    "5%",
+    "25%",
+    "7–12",
+    "60",
+    "0.8",
+    "1.2",
+    "Low"
+   ],
+   [
+    "Bicycle / cart",
+    "5%",
+    "5%",
+    "1.8",
+    "15",
+    "0.8",
+    "1.0",
+    "Keeps to the kerb"
+   ]
+  ]
+ ],
+ [
+  "p",
+  "Pedestrian crossings are modelled at 0–300 people per hour per 100 m of road, including mid-block crossings away from zebra lines, and animals are inserted as random events at up to two per kilometre. Each scenario starts with a 300-second warm-up in SUMO, so queues and densities are realistic before recording begins. An example SUMO configuration is given in Appendix A.",
+  null
+ ],
+ [
+  "h",
+  2,
+  "4.6 Calibration and Validation of the Traffic Model"
+ ],
+ [
+  "p",
+  "Before the AI model is tested, the traffic itself must be shown to be realistic. Simulated flows on each road section are compared with the theoretical target flows using the GEH statistic, a standard check in traffic modelling, where M is the modelled hourly flow and C the target count:",
+  null
+ ],
+ [
+  "p",
+  "GEH = √( 2 · (M − C)² / (M + C) )     (3)",
+  null
+ ],
+ [
+  "p",
+  "The traffic model is accepted when GEH is below 5 for at least 85% of sections, when simulated speed–density points follow the Greenshields curve within ±10%, and when time-headway distributions are plausible (no headways below the minimum physical gap). Where real data exists, such as highway trajectories from the highD dataset or guidance in India's Indo-HCM capacity manual, it is used as a further check.",
+  null
+ ],
+ [
+  "h",
+  2,
+  "4.7 Scenario Catalogue and Test Matrix"
+ ],
+ [
+  "t",
+  "Scenario catalogue (densities in PCU/km/lane)",
+  [
+   "ID",
+   "Scenario family",
+   "Key parameters",
+   "What it tests"
+  ],
+  [
+   [
+    "S1",
+    "Highway free flow",
+    "2–3 lanes; LOS A–B; own speed 60–90 km/h",
+    "Baseline accuracy; long-range detection"
+   ],
+   [
+    "S2",
+    "Highway dense with cut-ins",
+    "Density 35–85; cut-in gap 5–25 m by car, two-wheeler or auto",
+    "Cut-in prediction; conflict detection"
+   ],
+   [
+    "S3",
+    "Urban arterial, peak mixed traffic",
+    "45% two-wheelers; density 60–115",
+    "Dense tracking; traffic-state estimation"
+   ],
+   [
+    "S4",
+    "Signalised intersection",
+    "Turning conflicts; red-light runners",
+    "PET-based conflicts; crossing paths"
+   ],
+   [
+    "S5",
+    "Unsignalised junction or roundabout",
+    "Gap acceptance; priority violations",
+    "Prediction of crossing and merging"
+   ],
+   [
+    "S6",
+    "Stop-and-go congestion",
+    "Shockwaves; density 85–115",
+    "Traffic-state transitions; low-speed tracking"
+   ],
+   [
+    "S7",
+    "Pedestrian and animal crossings",
+    "0–300 pedestrians/h; cattle and dogs",
+    "Vulnerable road users"
+   ],
+   [
+    "S8",
+    "Wrong-way or stalled vehicle",
+    "Stopped truck in lane; wrong-way two-wheeler",
+    "Rare, high-risk hazards"
+   ],
+   [
+    "S9",
+    "Two-wheeler weaving",
+    "Lateral speed up to 1.5 m/s; filtering",
+    "Lateral prediction; identity switches"
+   ],
+   [
+    "S10",
+    "Rural two-lane overtaking",
+    "Oncoming overtakers; no markings",
+    "Head-on conflict detection"
+   ]
+  ]
+ ],
+ [
+  "p",
+  "Each family is run under five conditions: clear day; night, with and without street lighting; rain, light and heavy; fog or dust, with visibility from 50 to 300 m; and sensor faults, including 10–50% camera blockage, calibration offsets of 0.5–2°, 1–5% dropped frames and radar ghost targets. Figure 5 shows how the 3,500 runs are distributed. More runs are given to scenarios that are both common and dangerous in India, such as pedestrian crossings and two-wheeler weaving. Within each cell, parameters such as cut-in gap and speed are sampled with Latin hypercube sampling for even coverage, and at least 600 runs in S2, S7, S8 and S9 contain a scripted critical conflict (ground-truth TTC below 1.5 s). An example parameterised scenario is given in Appendix B.",
+  null
+ ],
+ [
+  "img",
+  4,
+  "Test matrix: planned runs by scenario family and condition"
+ ],
+ [
+  "p",
+  "Random sampling rarely finds the hardest cases, so the campaign adds an adaptive phase: once a failure is found, nearby parameter values are explored more densely (importance sampling) to map exactly where the model's performance breaks down.",
+  null
+ ],
+ [
+  "h",
+  2,
+  "4.8 Sensor and Environment Modelling"
+ ],
+ [
+  "p",
+  "The simulated forward camera matches the Week 3 hardware: rendered at 2048 × 1536 pixels with a 60° horizontal field of view, mounted 1.3 m above the road behind the windscreen. An optional simulated 77 GHz radar produces detections with radial velocity, with added clutter and ghost targets. CARLA's weather parameters control cloud, rain intensity, road wetness, fog density and sun angle, including low sun that causes glare. To narrow the gap between rendered and real images, sensor noise, motion blur, lens dirt, exposure changes, dropped frames and timing jitter are injected, and domain randomisation varies textures, vehicle colours and lighting between runs.",
+  null
+ ],
+ [
+  "h",
+  2,
+  "4.9 Integrating the Model: SIL and HIL"
+ ],
+ [
+  "p",
+  "In software-in-the-loop testing, the model runs in a container and receives sensor data through the same ROS 2 interfaces as on the real device. CARLA runs in synchronous mode with a fixed step of 1/30 s, waiting for the model at every step, so results are fully repeatable regardless of computer speed. In hardware-in-the-loop testing, rendered frames are fed into the real edge device through a video injection interface that emulates the camera, and hardware timestamps measure true end-to-end latency. HIL rigs are also placed in a thermal chamber at 45–60 °C to check behaviour in the heat of an Indian summer.",
+  null
+ ],
+ [
+  "h",
+  1,
+  "5. Performance Evaluation Metrics"
+ ],
+ [
+  "h",
+  2,
+  "5.1 Accuracy"
+ ],
+ [
+  "b",
+  [
+   [
+    "Detection:",
+    "precision = TP / (TP + FP) and recall = TP / (TP + FN) per class and distance band, and mean average precision (mAP) at an intersection-over-union threshold of 0.5."
+   ],
+   [
+    "Tracking:",
+    "MOTA, IDF1 and HOTA, plus the number of identity switches, with MOTA = 1 − Σ(FN + FP + IDSW) / Σ GT."
+   ],
+   [
+    "Position and speed estimation:",
+    "mean absolute error and relative error of distance and speed, by distance band."
+   ],
+   [
+    "Traffic-state estimation:",
+    "accuracy and macro-F1 across the five states, a confusion matrix, and the mean absolute percentage error (MAPE) of estimated density."
+   ],
+   [
+    "Trajectory prediction:",
+    "average and final displacement error over a 3-second horizon, and the miss rate (share of predictions with a final error above 2 m)."
+   ],
+   [
+    "Conflict detection:",
+    "precision and recall of detected conflicts against ground-truth conflicts, and the warning lead time (how early a conflict is flagged)."
+   ]
+  ]
+ ],
+ [
+  "p",
+  "For a predicted trajectory ŷ and the true trajectory y over T time steps:",
+  null
+ ],
+ [
+  "p",
+  "ADE = (1/T) · Σₜ ‖ŷₜ − yₜ‖,     FDE = ‖ŷ_T − y_T‖     (4)",
+  null
+ ],
+ [
+  "p",
+  "Conflicts are defined with surrogate safety measures. For a following vehicle with gap d and closing speed Δv, and for two road users passing through the same conflict area at times t₁ and t₂:",
+  null
+ ],
+ [
+  "p",
+  "TTC = d / Δv,     DRAC = Δv² / (2·d),     PET = t₂ − t₁     (5)",
+  null
+ ],
+ [
+  "p",
+  "A critical conflict is any event with TTC below 1.5 s, PET below 1.0 s, or a deceleration rate to avoid a crash (DRAC) above 3.4 m/s².",
+  null
+ ],
+ [
+  "h",
+  2,
+  "5.2 Latency and Real-Time Performance"
+ ],
+ [
+  "p",
+  "On the HIL rigs, the strategy measures end-to-end latency from frame capture to published output as the mean, 95th and 99th percentiles; frame rate and jitter; the deadline-miss rate (frames not processed within the 33 ms frame period); processor and accelerator utilisation; power; and time spent in thermal throttling. The 99th percentile matters more than the mean, because rare slow frames are exactly when a warning could be late.",
+  null
+ ],
+ [
+  "h",
+  2,
+  "5.3 Robustness"
+ ],
+ [
+  "p",
+  "Robustness ratio = Metric(degraded condition) / Metric(clear-day reference)     (6)",
+  null
+ ],
+ [
+  "p",
+  "The robustness ratio is calculated for every metric and condition, and degradation curves plot performance against rain intensity, fog visibility, traffic density, calibration error and frame-drop rate. The model should degrade gradually and should report its own reduced confidence, rather than failing suddenly or silently.",
+  null
+ ],
+ [
+  "h",
+  2,
+  "5.4 Safety-Oriented Metrics"
+ ],
+ [
+  "b",
+  [
+   "Missed critical conflicts in the scripted critical set (target: zero).",
+   "False conflict alerts per hour of simulated and shadow-mode driving.",
+   "Warning lead time relative to the moment the ground-truth TTC falls below 1.5 s."
+  ]
+ ],
+ [
+  "h",
+  2,
+  "5.5 Performance Targets"
+ ],
+ [
+  "t",
+  "Performance targets",
+  [
+   "Metric",
+   "Condition",
+   "Target"
+  ],
+  [
+   [
+    "Detection recall: vehicles, two-wheelers, pedestrians within 60 m",
+    "Clear day",
+    "≥ 95%"
+   ],
+   [
+    "Tracking HOTA",
+    "Densities up to 60 / 85–115 PCU/km/lane",
+    "≥ 0.60 / ≥ 0.50"
+   ],
+   [
+    "Distance error within 40 m",
+    "All",
+    "≤ 5% (mean absolute)"
+   ],
+   [
+    "Traffic-state classification",
+    "All",
+    "Macro-F1 ≥ 0.85"
+   ],
+   [
+    "Trajectory FDE at 3 s",
+    "Vehicles / two-wheelers and pedestrians",
+    "≤ 1.5 m / ≤ 2.0 m"
+   ],
+   [
+    "Critical conflict recall",
+    "Scripted critical set",
+    "≥ 98%, with zero misses with TTC below 1.0 s"
+   ],
+   [
+    "False conflict alerts",
+    "All",
+    "< 1 per hour"
+   ],
+   [
+    "Robustness ratio",
+    "Night, rain",
+    "≥ 0.75"
+   ],
+   [
+    "End-to-end latency",
+    "Target hardware",
+    "99th percentile < 100 ms"
+   ],
+   [
+    "Deadline misses",
+    "Target hardware",
+    "< 0.1% of frames"
+   ]
+  ]
+ ],
+ [
+  "h",
+  1,
+  "6. Data Analysis Methods"
+ ],
+ [
+  "h",
+  2,
+  "6.1 Data Logging and Ground-Truth Matching"
+ ],
+ [
+  "p",
+  "Every run logs the model's outputs, the simulator's ground truth, timing data, the scenario parameters and the random seed in a columnar format, tagged with the model and simulator versions. Predictions are matched to ground-truth objects frame by frame using the Hungarian algorithm on intersection-over-union or centre distance. Only objects that are actually visible to the camera (at least 25% of their pixels unoccluded and within range) count towards recall; occluded objects are analysed separately, so the model is not penalised for objects it could not possibly see.",
+  null
+ ],
+ [
+  "h",
+  2,
+  "6.2 Statistical Analysis"
+ ],
+ [
+  "p",
+  "All metrics are reported with 95% confidence intervals, using bootstrap resampling at the level of whole runs, since frames within a run are not independent. The number of test cases is chosen in advance. To estimate a recall of about p = 0.95 to within e = ±1% at 95% confidence (z = 1.96), each class and condition needs:",
+  null
+ ],
+ [
+  "p",
+  "n = z² · p · (1 − p) / e² = 1.96² × 0.95 × 0.05 / 0.01² ≈ 1,825 positive instances     (7)",
+  null
+ ],
+ [
+  "p",
+  "For rare events, the 'rule of three' gives a quick bound: if no failures occur in n independent trials, the 95% upper confidence bound on the failure probability is about 3/n. Zero missed conflicts in 600 scripted critical runs therefore shows a miss probability below about 0.5% per critical event. Model versions are compared with paired tests on the same scenarios: McNemar's test for paired pass/fail outcomes and the Wilcoxon signed-rank test for continuous metrics. Differences across conditions are tested with the Kruskal–Wallis test.",
+  null
+ ],
+ [
+  "h",
+  2,
+  "6.3 Sensitivity and Failure-Boundary Analysis"
+ ],
+ [
+  "p",
+  "Performance is modelled as a function of scenario parameters (density, rain, visibility, cut-in gap and so on) using regression and partial-dependence plots, which show which factors matter most. Failure boundaries are then mapped: for example, the fog visibility or density at which recall for two-wheelers falls below target. These boundaries define the model's validated operating domain and tell the Week 3 decision engine when to warn the driver that features are limited.",
+  null
+ ],
+ [
+  "h",
+  2,
+  "6.4 Error Analysis and the Data Feedback Loop"
+ ],
+ [
+  "p",
+  "Errors are sliced by class, distance, occlusion, lighting and scenario family, and failure cases are clustered by their features so that common causes become visible, for instance 'two-wheelers partly hidden behind buses at dusk'. Each cluster becomes a ticket with a root cause and a fix: new training data, a model change or a new scenario. Fixed failures are added to a regression suite that every future model version must pass.",
+  null
+ ],
+ [
+  "h",
+  2,
+  "6.5 Measuring the Simulation-to-Reality Gap"
+ ],
+ [
+  "p",
+  "Simulation results are trusted only to the extent that they agree with reality. The model is evaluated on real recorded data (nuScenes, IDD and later pilot recordings) and on simulated scenes recreated to match them. The ratio of simulated to real performance is tracked for each metric; if simulation overestimates performance by more than 10%, simulated results are used only for relative comparisons between model versions, not as absolute evidence of readiness.",
+  null
+ ],
+ [
+  "h",
+  1,
+  "7. Testing Procedures"
+ ],
+ [
+  "b",
+  [
+   [
+    "Test case specification:",
+    "each test case has an ID, scenario family, parameter values, random seed, condition, expected outcome and pass/fail rule, stored with the OpenSCENARIO file."
+   ],
+   [
+    "Entry criteria:",
+    "traffic model calibrated (Section 4.6); simulator, model and analysis versions frozen; test cases reviewed."
+   ],
+   [
+    "Execution:",
+    "runs are distributed automatically across simulation machines; failed or crashed runs are repeated once and logged as infrastructure faults if they fail again."
+   ],
+   [
+    "Regression testing:",
+    "every new model version runs a 300-run smoke subset and the full failure regression suite before the full campaign."
+   ],
+   [
+    "Defect triage:",
+    "failures are classed as critical (a missed critical conflict), major (a target missed) or minor, and critical defects block deployment."
+   ],
+   [
+    "Exit criteria:",
+    "all planned runs complete, all metrics reported with confidence intervals, and no open critical defects."
+   ],
+   [
+    "Reproducibility:",
+    "containers, pinned software versions, versioned datasets and logged seeds allow any run to be repeated exactly."
+   ]
+  ]
+ ],
+ [
+  "h",
+  1,
+  "8. Expected Challenges and Mitigations"
+ ],
+ [
+  "t",
+  "Expected challenges and mitigations",
+  [
+   "Challenge",
+   "Impact",
+   "Mitigation"
+  ],
+  [
+   [
+    "Simulation-to-reality gap in images and sensor physics",
+    "Over-optimistic results",
+    "Real-data replay, domain randomisation, noise injection, gap measurement (6.5)"
+   ],
+   [
+    "Modelling Indian driving behaviour",
+    "Unrealistic traffic",
+    "SUMO sublane model; scripted jaywalking, wrong-way and animal events; recalibrate with pilot video"
+   ],
+   [
+    "Theoretical data may not match reality",
+    "Wrong densities or vehicle mix",
+    "Sensitivity analysis over parameter ranges; replace with survey data in the pilot"
+   ],
+   [
+    "High computing cost of rendering",
+    "Slow campaigns",
+    "Parallel headless simulation; prioritise critical scenarios; cloud GPUs at peak"
+   ],
+   [
+    "Co-simulation timing",
+    "Artefacts in vehicle motion",
+    "Synchronous mode; fixed time step; consistency checks between SUMO and CARLA"
+   ],
+   [
+    "Defining ground truth for occluded objects",
+    "Unfair or misleading metrics",
+    "Visibility-based evaluation; separate occlusion analysis"
+   ],
+   [
+    "Covering rare events",
+    "Hidden failure modes",
+    "Scripted critical scenarios; importance sampling; adversarial search"
+   ],
+   [
+    "HIL timing accuracy",
+    "Wrong latency figures",
+    "Hardware timestamps; measured injection delay subtracted"
+   ],
+   [
+    "Overfitting to the simulator",
+    "False confidence",
+    "Hold-out scenario families never used for tuning"
+   ]
+  ]
+ ],
+ [
+  "h",
+  1,
+  "9. Expected Outcomes"
+ ],
+ [
+  "h",
+  2,
+  "9.1 Hypotheses and Expected Results"
+ ],
+ [
+  "p",
+  "The campaign is designed to test specific hypotheses. Based on published research and the model design, the expected results are:",
+  null
+ ],
+ [
+  "b",
+  [
+   [
+    "H1 Clear conditions:",
+    "in daylight at densities up to 60 PCU/km/lane, all accuracy targets are expected to be met."
+   ],
+   [
+    "H2 Dense mixed traffic:",
+    "at stop-and-go densities, tracking is expected to be the main weakness, with identity switches rising sharply as two-wheelers are hidden behind buses and trucks."
+   ],
+   [
+    "H3 Night and rain:",
+    "a camera-only model is expected to keep a robustness ratio of roughly 0.75–0.85, with the radar-equipped variant performing noticeably better in heavy rain and fog."
+   ],
+   [
+    "H4 Prediction:",
+    "trajectory errors are expected to be largest for two-wheelers and pedestrians, because of their sudden lateral movements."
+   ],
+   [
+    "H5 Real time:",
+    "the optimised INT8 model is expected to keep 99th-percentile latency below 100 ms at 30 fps, with thermal throttling only at the hottest chamber settings."
+   ],
+   [
+    "H6 Traffic-state estimation:",
+    "most errors are expected between neighbouring states, such as 'near capacity' and 'congested', rather than between distant ones."
+   ]
+  ]
+ ],
+ [
+  "p",
+  "Whether or not each hypothesis holds, the result is useful: confirmed hypotheses build confidence, while failed ones point directly to the data or model changes needed.",
+  null
+ ],
+ [
+  "h",
+  2,
+  "9.2 Real-Time Deployment Readiness Criteria"
+ ],
+ [
+  "p",
+  "The model is declared ready for the 200-vehicle pilot only if all of the following hold, each judged using the lower bound of its 95% confidence interval:",
+  null
+ ],
+ [
+  "t",
+  "Go/no-go criteria for real-time deployment",
+  [
+   "Criterion",
+   "Go threshold"
+  ],
+  [
+   [
+    "All performance targets (Section 5.5)",
+    "Met in clear conditions and up to 85 PCU/km/lane"
+   ],
+   [
+    "Robustness in night and rain",
+    "Ratio ≥ 0.75 for detection and conflict recall"
+   ],
+   [
+    "Missed critical conflicts",
+    "Zero with TTC below 1.0 s; ≥ 98% recall overall"
+   ],
+   [
+    "Latency on target hardware",
+    "99th percentile < 100 ms; < 0.1% deadline misses"
+   ],
+   [
+    "Simulation-to-reality gap",
+    "≤ 10% on matched real data"
+   ],
+   [
+    "Shadow-mode false alerts",
+    "< 1 per hour on public roads"
+   ],
+   [
+    "Open critical defects",
+    "None"
+   ]
+  ]
+ ],
+ [
+  "h",
+  2,
+  "9.3 Deliverables"
+ ],
+ [
+  "b",
+  [
+   "A validated traffic simulation of Indian mixed traffic, with calibrated vehicle and behaviour parameters.",
+   "A reusable library of about 3,500 parameterised scenarios in OpenSCENARIO format.",
+   "A test report with all metrics, confidence intervals, degradation curves and failure boundaries.",
+   "A failure library and regression suite for future model versions.",
+   "A go/no-go recommendation for real-time deployment in the pilot fleet."
+  ]
+ ],
+ [
+  "h",
+  1,
+  "10. Implementation Timeline and Resources"
+ ],
+ [
+  "t",
+  "16-week testing programme",
+  [
+   "Weeks",
+   "Activities"
+  ],
+  [
+   [
+    "1–2",
+    "Finalise objectives, operational design domain and scenario catalogue; set up tools"
+   ],
+   [
+    "3–5",
+    "Build road networks; generate theoretical demand; calibrate and validate traffic (GEH)"
+   ],
+   [
+    "5–6",
+    "Configure sensors and environment; integrate the model in SIL"
+   ],
+   [
+    "7–10",
+    "Run the SIL campaign of about 3,500 runs, including the adaptive phase"
+   ],
+   [
+    "9–11",
+    "Integrate HIL rigs; run about 400 timing and thermal tests"
+   ],
+   [
+    "11–13",
+    "Analyse results; triage failures; retrain and re-test"
+   ],
+   [
+    "14–15",
+    "Closed-track confirmation tests (about 60 manoeuvres)"
+   ],
+   [
+    "16",
+    "Final report and go/no-go decision"
+   ]
+  ]
+ ],
+ [
+  "p",
+  "The programme fits within Months 6–10 of the Week 1 roadmap, before the fleet pilot begins. It needs a team of four (a simulation engineer, a machine learning engineer, a test engineer and a data analyst), four GPU workstations or equivalent cloud capacity for parallel simulation, two HIL rigs with target edge devices, and access to a thermal chamber and a closed test track. All core simulation software is open source.",
+  null
+ ],
+ [
+  "h",
+  1,
+  "11. Conclusions"
+ ],
+ [
+  "p",
+  "Simulation is the only practical way to test an AI traffic analytics model against the full range of situations it will face on Indian roads, including the rare and dangerous ones. This strategy combines SUMO's microscopic traffic simulation, with theoretical demand and lane-free two-wheeler behaviour, and CARLA's sensor-realistic rendering into a single framework, and tests the model through five levels from datasets to shadow-mode driving. A catalogue of ten scenario families under five conditions, about 3,500 runs in total, provides broad and targeted coverage. Accuracy, latency and robustness are each measured with clear metrics and targets, and the analysis plan uses confidence intervals, planned sample sizes, hypothesis tests and failure-boundary mapping so that conclusions are statistically sound. The main risks, especially the gap between simulation and reality and the difficulty of modelling Indian driving behaviour, are addressed through real-data validation, sensitivity analysis and physical testing. The result will be an evidence-based decision on whether the model is ready for real-time deployment in the Saarthi pilot fleet, and a reusable testing pipeline that keeps every future model version safe.",
+  null
+ ],
+ [
+  "h",
+  1,
+  "References"
+ ],
+ [
+  "p",
+  "[1]  Greenshields, B. D. (1935). A study of traffic capacity. Proceedings of the Highway Research Board, 14.",
+  null
+ ],
+ [
+  "p",
+  "[2]  Lighthill, M. J. and Whitham, G. B. (1955). On kinematic waves II: A theory of traffic flow on long crowded roads. Proceedings of the Royal Society A, 229. Richards, P. I. (1956). Shock waves on the highway. Operations Research, 4(1).",
+  null
+ ],
+ [
+  "p",
+  "[3]  Treiber, M., Hennecke, A. and Helbing, D. (2000). Congested traffic states in empirical observations and microscopic simulations. Physical Review E, 62(2).",
+  null
+ ],
+ [
+  "p",
+  "[4]  Lopez, P. A. et al. (2018). Microscopic traffic simulation using SUMO. IEEE International Conference on Intelligent Transportation Systems (ITSC).",
+  null
+ ],
+ [
+  "p",
+  "[5]  Dosovitskiy, A., Ros, G., Codevilla, F., López, A. and Koltun, V. (2017). CARLA: An open urban driving simulator. Conference on Robot Learning (CoRL).",
+  null
+ ],
+ [
+  "p",
+  "[6]  ASAM e.V. ASAM OpenSCENARIO and ASAM OpenDRIVE standards.",
+  null
+ ],
+ [
+  "p",
+  "[7]  ISO 34502:2022. Road vehicles – Test scenarios for automated driving systems – Scenario based safety evaluation framework.",
+  null
+ ],
+ [
+  "p",
+  "[8]  Gettman, D. and Head, L. (2003). Surrogate safety measures from traffic simulation models. US Federal Highway Administration, FHWA-RD-03-050.",
+  null
+ ],
+ [
+  "p",
+  "[9]  Krajewski, R., Bock, J., Kloeker, L. and Eckstein, L. (2018). The highD dataset: A drone dataset of naturalistic vehicle trajectories on German highways. ITSC.",
+  null
+ ],
+ [
+  "p",
+  "[10]  Caesar, H. et al. (2020). nuScenes: A multimodal dataset for autonomous driving. CVPR.",
+  null
+ ],
+ [
+  "p",
+  "[11]  Varma, G. et al. (2019). IDD: A dataset for exploring problems of autonomous navigation in unconstrained environments. WACV.",
+  null
+ ],
+ [
+  "p",
+  "[12]  CSIR–Central Road Research Institute (2017). Indian Highway Capacity Manual (Indo-HCM).",
+  null
+ ],
+ [
+  "p",
+  "[13]  Li, Y., Yu, R., Shahabi, C. and Liu, Y. (2018). Diffusion convolutional recurrent neural network: Data-driven traffic forecasting. ICLR.",
+  null
+ ],
+ [
+  "p",
+  "[14]  Alahi, A. et al. (2016). Social LSTM: Human trajectory prediction in crowded spaces. CVPR.",
+  null
+ ],
+ [
+  "p",
+  "[15]  Bernardin, K. and Stiefelhagen, R. (2008). Evaluating multiple object tracking performance: The CLEAR MOT metrics. EURASIP Journal on Image and Video Processing.",
+  null
+ ],
+ [
+  "p",
+  "[16]  Ristani, E. et al. (2016). Performance measures and a data set for multi-target, multi-camera tracking. ECCV Workshops.",
+  null
+ ],
+ [
+  "p",
+  "[17]  Luiten, J. et al. (2021). HOTA: A higher order metric for evaluating multi-object tracking. International Journal of Computer Vision, 129.",
+  null
+ ],
+ [
+  "p",
+  "[18]  Efron, B. (1979). Bootstrap methods: Another look at the jackknife. The Annals of Statistics, 7(1).",
+  null
+ ],
+ [
+  "p",
+  "[19]  Hanley, J. A. and Lippman-Hand, A. (1983). If nothing goes wrong, is everything all right? Interpreting zero numerators. JAMA, 249(13).",
+  null
+ ],
+ [
+  "h",
+  1,
+  "Appendix A: Example SUMO Vehicle Type Configuration"
+ ],
+ [
+  "p",
+  "The extract below defines three of the vehicle classes with the Intelligent Driver Model and sublane behaviour. It is used with SUMO's --lateral-resolution option (for example 0.4 m) so that vehicles can move within lanes. Speeds are in metres per second (16.7 m/s = 60 km/h).",
+  null
+ ],
+ [
+  "code",
+  "<vTypeDistribution id=\"urban_mix\">"
+ ],
+ [
+  "code",
+  "  <vType id=\"two_wheeler\" vClass=\"motorcycle\" probability=\"0.45\""
+ ],
+ [
+  "code",
+  "         length=\"1.9\" width=\"0.8\" maxSpeed=\"16.7\" accel=\"2.5\" decel=\"5.0\""
+ ],
+ [
+  "code",
+  "         tau=\"0.8\" minGap=\"1.0\" speedFactor=\"normc(1,0.1,0.2,2)\""
+ ],
+ [
+  "code",
+  "         carFollowModel=\"IDM\" latAlignment=\"arbitrary\""
+ ],
+ [
+  "code",
+  "         minGapLat=\"0.3\" maxSpeedLat=\"1.5\"/>"
+ ],
+ [
+  "code",
+  "  <vType id=\"car\" vClass=\"passenger\" probability=\"0.25\""
+ ],
+ [
+  "code",
+  "         length=\"4.2\" width=\"1.8\" maxSpeed=\"22.2\" accel=\"2.0\" decel=\"4.5\""
+ ],
+ [
+  "code",
+  "         tau=\"1.0\" minGap=\"2.0\" speedFactor=\"normc(1,0.1,0.2,2)\""
+ ],
+ [
+  "code",
+  "         carFollowModel=\"IDM\" latAlignment=\"center\" minGapLat=\"0.6\"/>"
+ ],
+ [
+  "code",
+  "  <vType id=\"auto_rickshaw\" vClass=\"passenger\" probability=\"0.15\""
+ ],
+ [
+  "code",
+  "         length=\"2.8\" width=\"1.4\" maxSpeed=\"13.9\" accel=\"1.5\" decel=\"4.0\""
+ ],
+ [
+  "code",
+  "         tau=\"1.0\" minGap=\"1.2\" speedFactor=\"normc(1,0.1,0.2,2)\""
+ ],
+ [
+  "code",
+  "         carFollowModel=\"IDM\" latAlignment=\"arbitrary\""
+ ],
+ [
+  "code",
+  "         minGapLat=\"0.4\" maxSpeedLat=\"1.0\"/>"
+ ],
+ [
+  "code",
+  "  <!-- bus, truck and bicycle types follow the same pattern -->"
+ ],
+ [
+  "code",
+  "</vTypeDistribution>"
+ ],
+ [
+  "h",
+  1,
+  "Appendix B: Example Parameterised Scenario (S2 Cut-In)"
+ ],
+ [
+  "t",
+  "Parameters of the S2 cut-in scenario",
+  [
+   "Parameter",
+   "Range or values",
+   "Sampling"
+  ],
+  [
+   [
+    "Own vehicle speed",
+    "40–80 km/h",
+    "Latin hypercube"
+   ],
+   [
+    "Cutting-in road user",
+    "Car, two-wheeler, auto-rickshaw, bus",
+    "Weighted by vehicle mix"
+   ],
+   [
+    "Initial longitudinal gap",
+    "5–25 m",
+    "Latin hypercube"
+   ],
+   [
+    "Relative speed",
+    "−25 to 0 km/h",
+    "Latin hypercube"
+   ],
+   [
+    "Lateral speed during cut-in",
+    "0.5–1.5 m/s",
+    "Uniform"
+   ],
+   [
+    "Side",
+    "Left or right",
+    "50 / 50"
+   ],
+   [
+    "Background density",
+    "35–85 PCU/km/lane",
+    "By scenario cell"
+   ],
+   [
+    "Weather and lighting",
+    "From the test matrix column",
+    "Fixed per run"
+   ],
+   [
+    "Random seed",
+    "Unique per run",
+    "Logged"
+   ],
+   [
+    "Pass rule",
+    "Conflict flagged before the ground-truth TTC falls below 1.0 s",
+    "—"
+   ]
+  ]
+ ],
+ [
+  "h",
+  1,
+  "Appendix C: Glossary"
+ ],
+ [
+  "t",
+  "Glossary of terms",
+  [
+   "Term",
+   "Meaning"
+  ],
+  [
+   [
+    "ADE / FDE",
+    "Average / final displacement error of a predicted trajectory"
+   ],
+   [
+    "DRAC",
+    "Deceleration rate to avoid a crash"
+   ],
+   [
+    "GEH",
+    "A statistic for comparing modelled and observed traffic flows"
+   ],
+   [
+    "HIL / SIL / MIL",
+    "Hardware-, software- and model-in-the-loop testing"
+   ],
+   [
+    "HOTA / MOTA / IDF1",
+    "Standard multi-object tracking accuracy metrics"
+   ],
+   [
+    "IDM",
+    "Intelligent Driver Model, a car-following model"
+   ],
+   [
+    "LOS",
+    "Level of service: a grade of traffic conditions from free flow to jammed"
+   ],
+   [
+    "ODD",
+    "Operational design domain: the conditions a system is designed to work in"
+   ],
+   [
+    "PCU",
+    "Passenger car unit: a way of counting mixed vehicles as car-equivalents"
+   ],
+   [
+    "PET",
+    "Post-encroachment time between two road users at a conflict point"
+   ],
+   [
+    "TTC",
+    "Time-to-collision at current speeds"
+   ]
+  ]
+ ]
+]
